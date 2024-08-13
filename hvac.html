@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Energy Consumption Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.10/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.7.4/lottie.min.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-interactivity@latest/dist/lottie-interactivity.min.js"></script>
+
+    <style>
+        html {
+            scroll-behavior: smooth;
+        }
+    
+        body {
+            background-color: #f5f5f7;
+            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+    
+        .reveal {
+            opacity: 0;
+            transform: translateY(100px);
+            transition: all 0.6s ease-in-out;
+        }
+    
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    
+        .fade-in {
+            animation: fadeIn 2s forwards;
+        }
+    
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+    
+            100% {
+                opacity: 1;
+            }
+        }
+    
+        .fade-out {
+            animation: fadeOut 3s forwards;
+        }
+    
+        @keyframes fadeOut {
+            0% {
+                opacity: 1;
+            }
+    
+            100% {
+                opacity: 0;
+            }
+        }
+    
+        .arrow {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            animation: bounce 2s infinite;
+        }
+    
+        @keyframes bounce {
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+    
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+    
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+    
+        .section {
+            margin: 11rem 5rem;
+        }
+    
+        .bg-light-grey {
+            background-color: #e0e0e0;
+        }
+    
+        .text-dark-grey {
+            color: #333;
+        }
+    
+        .text-green {
+            color: #2e7d32;
+        }
+    
+        .text-9xl {
+            font-size: 7rem;
+        }
+    
+        .text-5xl {
+            font-size: 4rem;
+        }
+    
+        .text-2xl {
+            font-size: 2rem;
+        }
+    
+        .static-title {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            font-weight: bold;
+            display: none;
+            color: #2e7d32;
+        }
+    
+        .visible {
+            display: block;
+        }
+    
+        .navbar {
+            background-color: #f5f5f7;
+            color: #2e7d32;
+            font-weight: bold;
+            padding: 1rem;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            display: none;
+        }
+    
+        .navbar.visible {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+    
+        .nav-link {
+            color: #2e7d32;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+    
+        /* Override DaisyUI's dark mode */
+        :root {
+            --btn-text-color: #333;
+            --btn-bg-color: #f5f5f7;
+            --btn-border-color: #ddd;
+        }
+    
+        .btn {
+            color: var(--btn-text-color);
+            background-color: var(--btn-bg-color);
+            border-color: var(--btn-border-color);
+        }
+    
+        /* Responsive design */
+        @media (max-width: 1024px) {
+            .section {
+                margin: 6rem 2rem;
+            }
+        }
+    
+        @media (max-width: 768px) {
+            .section {
+                margin: 3rem 1rem;
+            }
+    
+            .navbar {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+    
+            .hero-content h1 {
+                font-size: 4rem;
+            }
+    
+            .hero-content p {
+                font-size: 1rem;
+            }
+        }
+    
+        /* Increased top margin for HVAC section */
+        #hvac-section {
+            margin-top: 6rem;
+        }
+    
+        /* Custom off-white text color */
+        .text-off-white {
+            color: #f5f5f5e8;
+        }
+
+        .arrow {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 2rem;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%,
+            20%,
+            50%,
+            80%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            40% {
+                transform: translateX(-50%) translateY(-10px);
+            }
+
+            60% {
+                transform: translateX(-50%) translateY(-5px);
+            }
+        }
+
+        .thermo-arrows {
+            position: absolute;
+            top: 42%;
+            right: 290px;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+            color: #151615;
+        }
+
+        .thermo-arrows span {
+            display: block;
+            margin: 80px 0;
+            animation: bounce 1.5s infinite;
+        }
+
+        .thermo-arrows span:nth-child(2) {
+            animation-delay: 0.5s;
+        }
+
+        .thermo-arrows span:nth-child(3) {
+            animation-delay: 1s;
+        }
+
+    </style>
+</head>
+
+<body>
+
+    <!-- HVAC Section -->
+    <div id="hvac-section" class="section thermostat-container flex flex-row mx-20 my-10 space-x-6 reveal hvac-section">
+        <div class="w-1/2">
+            <article class="prose">
+                <h1 class="text-dark-grey">Teachers in our district can help lower our carbon footprint by simply reducing or increasing their classroom thermostats by a degree.</h1>
+                <h1 class="font-bold text-dark-grey">Slide the thermometer up or down to see this impact!</h2>
+                <p id="co2Impact" class="text-5xl font-bold text-green">Trees saved: 0</p>
+                <button class="btn text-dark-grey text-2xl font-bold" id="switchSeason">Switch to Winter</button>
+            </article>
+        </div>
+        <div class="thermostat-animation rounded-md relative" id="thermo-background">
+            <div class="my-auto" id="lottieThermometer"></div>
+        </div>
+    </div>
+     
+    <script>
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            lt = document.getElementById('lottieThermometer');
+            lt.style.width = '140%';
+            const lottieAnimation = lottie.loadAnimation({
+                container: document.getElementById('lottieThermometer'),
+                renderer: 'svg',
+                loop: false,
+                autoplay: true,
+                path: 'https://lottie.host/c16fd91e-2419-4eb1-9540-bb352913bd6c/x92LxRS0s8.json'
+            });
+
+            let isSummer = false;
+            let temperature = 68;
+            let startY = 0;
+            let moving = false;
+
+            // Constants
+            const CO2_PER_TREE_YEARLY = 21.77209; // CO2 offset per tree in kg per year
+
+            // HVAC Emissions data per temperature
+            const hvacEmissionsPerTemp = {
+                summer: {
+                    68: { emissions: 2_334_600, trees_required: 107_274 },
+                    69: { emissions: 2_546_837, trees_required: 116_928 },
+                    70: { emissions: 2_759_073, trees_required: 126_582 },
+                    71: { emissions: 2_971_310, trees_required: 136_236 },
+                    72: { emissions: 3_183_546, trees_required: 145_890 }
+                },
+                winter: {
+                    68: { emissions: 2_334_600, trees_required: 107_274 },
+                    69: { emissions: 2_122_363, trees_required: 97_620 },
+                    70: { emissions: 1_910_126, trees_required: 87_966 },
+                    71: { emissions: 1_697_888, trees_required: 78_312 },
+                    72: { emissions: 1_485_651, trees_required: 68_658 }
+                }
+            };
+
+            function updateTemperatureDisplay() {
+                //document.getElementById('temperatureDisplay').textContent = `Temperature: ${temperature}°F`;
+                const optimalTemp = isSummer ? 72 : 68;
+                const currentEmissions = hvacEmissionsPerTemp[isSummer ? 'summer' : 'winter'][temperature].emissions;
+                const baseEmissions = hvacEmissionsPerTemp[isSummer ? 'summer' : 'winter'][optimalTemp].emissions;
+                const extraCO2 = Math.abs(currentEmissions - baseEmissions);
+                const treesRequired = Math.round((extraCO2 / CO2_PER_TREE_YEARLY) / 100) * 100; // Rounded to the nearest hundred
+                document.getElementById('co2Impact').textContent = `Trees Saved: ${treesRequired.toLocaleString()}`;
+                const frame = mapTemperatureToFrame(temperature);
+                lottieAnimation.goToAndStop(frame, true);
+            }
+
+            function mapTemperatureToFrame(temp) {
+                if (isSummer) {
+                    return 16 + (72 - temp) * 3;
+                } else {
+                    return (temp - 68) * 4;
+                }
+            }
+
+            const thermometer = document.getElementById('lottieThermometer');
+            thermometer.addEventListener('mousedown', function (event) {
+                startY = event.clientY;
+                moving = true;
+                event.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function (event) {
+                if (moving) {
+                    const diff = startY - event.clientY;
+                    const tempChange = Math.sign(diff) * (Math.abs(diff) > 30 ? 1 : 0);
+                    if (tempChange != 0) {
+                        temperature = Math.min(Math.max(temperature + tempChange, 68), 72);
+                        startY = event.clientY;
+                        updateTemperatureDisplay();
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', function () {
+                moving = false;
+            });
+
+            document.getElementById('switchSeason').textContent = 'Switch to Summer';
+            document.getElementById('switchSeason').addEventListener('click', function () {
+                isSummer = !isSummer;
+                temperature = isSummer ? 72 : 68;
+                this.textContent = isSummer ? 'Switch to Winter' : 'Switch to Summer';
+                updateTemperatureDisplay();
+            });
+
+            updateTemperatureDisplay();
+        });
+        
+        const reveals = document.querySelectorAll(".reveal");
+
+        function reveal() {
+            for (let i = 0; i < reveals.length; i++) {
+                const windowHeight = window.innerHeight;
+                const elementTop = reveals[i].getBoundingClientRect().top;
+                const elementVisible = 150;
+
+                if (elementTop < windowHeight - elementVisible) {
+                    reveals[i].classList.add("active");
+                } else {
+                    reveals[i].classList.remove("active");
+                }
+            }
+        }
+
+        window.addEventListener("scroll", reveal);
+
+        reveal();
+
+    </script>
+</body>
+</html>
