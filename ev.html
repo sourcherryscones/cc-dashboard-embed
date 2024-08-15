@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="overflow-hidden">
+<html lang="en" class="bg-white overflow-hidden">
 
 <head>
     <meta charset="UTF-8">
@@ -195,7 +195,7 @@
     
         /* Increased top margin for HVAC section */
         #hvac-section {
-            margin-top: 3rem;
+            margin-top: 6rem;
         }
     
         /* Custom off-white text color */
@@ -256,116 +256,72 @@
     </style>
 </head>
 
-<body class="bg-white mt-1">
-
-    <!-- HVAC Section -->
-    <div id="hvac-section" class="section thermostat-container flex flex-row mx-20 space-x-6 reveal hvac-section bg-white space-y-2">
-        <div class="w-2/3">
-            <article class="prose">
-                <h1 class="text-dark-grey text-2xl">FUHSD staff can help <span class="text-green">lower our carbon footprint</span> by simply changing their classrooms' thermostats by a degree.</h1>
-                <h2 class="font-bold text-green italic">Slide the thermometer up or down to see this impact!</h2>
-                <p id="co2Impact" class="text-2xl font-bold text-green">Trees saved: 0</p>
-                <button class="btn text-dark-grey text-2xl font-bold mt-7" id="switchSeason">Switch to Winter</button>
-            </article>
+<body class="bg-white">
+    <div id="ev-section" class="space-x-6 section reveal bg-white">
+        <div class="w-3/4 mx-auto">
+            <div class="mx-auto w-full text-center space-y-8">
+                <h1 class="font-black text-2xl text-dark-grey">Our path forward: <span class="text-orange-400">electrification</span></h1>
+                <h2 class="font-bold text-green italic text-2xl">Move the sliders to see how our EV infrastructure is making a difference!</h2>
+                <div id="ev_sliders" class="w-11/12 mt-20">
+                    <h2 class="my-5 font-medium text-2xl text-blue-600">Number of EV chargers: <span id="charger_label">120</span></h2>
+                    <input id="charger_slider" type="range" min="0" max="270" value="120" step="30" class="range w-full" oninput="recalculate_metrics()" />
+                    <p class="text-3xl" id="lightning_icontainer">&#9889;&#9889;</p>
+                    <h2 class="font-medium my-5 text-2xl text-blue-600">Hours occupied: <span id="hours_label">5</span></h2>
+                    <input id="occupancy_slider" type="range" min="0" max="10" value="5" class="range w-full" oninput="recalculate_metrics()" />
+                    <p class="text-3xl" id="clock_icontainer"></p>
+                </div>
+                <p class="text-3xl font-bold text-green mt-8">In a single year, that's equivalent to planting <br>~<span id="ev_tree_equivalent">3,376</span> trees&#127794;</p>
+            </div>
         </div>
-        <div class="thermostat-animation rounded-md relative" id="thermo-background">
-            <div class="my-auto" id="lottieThermometer"></div>
-        </div>
+        
     </div>
      
     <script>
-        
-        document.addEventListener('DOMContentLoaded', function () {
-            lt = document.getElementById('lottieThermometer');
-            lt.style.width = '140%';
-            const lottieAnimation = lottie.loadAnimation({
-                container: document.getElementById('lottieThermometer'),
-                renderer: 'svg',
-                loop: false,
-                autoplay: true,
-                path: 'https://lottie.host/c16fd91e-2419-4eb1-9540-bb352913bd6c/x92LxRS0s8.json'
-            });
+        // Functions for EV interactive
+        function recalculate_metrics() {
+            var numChargers = document.getElementById('charger_slider').value
+            document.getElementById("charger_label").innerHTML = numChargers;
+            numChargers = Number(numChargers);
+            updateChargerIcons(numChargers);
+            var occupiedHours = (document.getElementById('occupancy_slider').value)
+            document.getElementById("hours_label").innerHTML = occupiedHours;
+            occupiedHours = Number(occupiedHours)
+            updateClockIcons(occupiedHours);
+            var kwhval = numChargers * occupiedHours * Number(2.695); // TODO: add EV to KWH formula
+            var ghgval = kwhval * 1.79 * 2204.62 * 0.000404; // TODO: add KWH to GHG formula
+            var treeval = kwhval * 0.0116 * 180
+            update_ev_numbers(kwhval, ghgval, treeval)
+        }
 
-            let isSummer = false;
-            let temperature = 68;
-            let startY = 0;
-            let moving = false;
-
-            // Constants
-            const CO2_PER_TREE_YEARLY = 21.77209; // CO2 offset per tree in kg per year
-
-            // HVAC Emissions data per temperature
-            const hvacEmissionsPerTemp = {
-                summer: {
-                    68: { emissions: 2_334_600, trees_required: 107_274 },
-                    69: { emissions: 2_546_837, trees_required: 116_928 },
-                    70: { emissions: 2_759_073, trees_required: 126_582 },
-                    71: { emissions: 2_971_310, trees_required: 136_236 },
-                    72: { emissions: 3_183_546, trees_required: 145_890 }
-                },
-                winter: {
-                    68: { emissions: 2_334_600, trees_required: 107_274 },
-                    69: { emissions: 2_122_363, trees_required: 97_620 },
-                    70: { emissions: 1_910_126, trees_required: 87_966 },
-                    71: { emissions: 1_697_888, trees_required: 78_312 },
-                    72: { emissions: 1_485_651, trees_required: 68_658 }
-                }
-            };
-
-            function updateTemperatureDisplay() {
-                //document.getElementById('temperatureDisplay').textContent = `Temperature: ${temperature}°F`;
-                const optimalTemp = isSummer ? 72 : 68;
-                const currentEmissions = hvacEmissionsPerTemp[isSummer ? 'summer' : 'winter'][temperature].emissions;
-                const baseEmissions = hvacEmissionsPerTemp[isSummer ? 'summer' : 'winter'][optimalTemp].emissions;
-                const extraCO2 = Math.abs(currentEmissions - baseEmissions);
-                const treesRequired = Math.round((extraCO2 / CO2_PER_TREE_YEARLY) / 100) * 100; // Rounded to the nearest hundred
-                document.getElementById('co2Impact').textContent = `Trees Saved: ${treesRequired.toLocaleString()}`;
-                const frame = mapTemperatureToFrame(temperature);
-                lottieAnimation.goToAndStop(frame, true);
+        function updateChargerIcons(num) {
+            var n = Number(num) / 30 // extra cast just in case
+            var parent_div = document.getElementById('lightning_icontainer');
+            parent_div.textContent = ""; // clear the icons
+            for (let i = 0; i < n; i++) {
+                parent_div.innerHTML += "&#9889;"
             }
+        }
 
-            function mapTemperatureToFrame(temp) {
-                if (isSummer) {
-                    return 16 + (72 - temp) * 3;
-                } else {
-                    return (temp - 68) * 4;
-                }
+        function updateClockIcons(num) {
+            var n = Number(num) // extra cast just in case
+            var parent_div = document.getElementById('clock_icontainer');
+            parent_div.textContent = ""; // clear the icons
+            for (let i = 0; i < n; i++) {
+                parent_div.innerHTML += "&#128336;"
             }
+        }
 
-            const thermometer = document.getElementById('lottieThermometer');
-            thermometer.addEventListener('mousedown', function (event) {
-                startY = event.clientY;
-                moving = true;
-                event.preventDefault();
-            });
+        function update_ev_numbers(kwh, ghgs, trees) {
+            kwh_rounded = Math.round(kwh);
+            ghgs_rounded = Math.round(ghgs)
+            trees_rounded = Math.round(trees)
+            //document.getElementById('kwh_produced').innerHTML = kwh_rounded.toLocaleString()
+            //document.getElementById('ghgs_avoided').innerHTML = ghgs_rounded.toLocaleString()
+            document.getElementById('ev_tree_equivalent').innerHTML = trees_rounded.toLocaleString()
+        }
 
-            document.addEventListener('mousemove', function (event) {
-                if (moving) {
-                    const diff = startY - event.clientY;
-                    const tempChange = Math.sign(diff) * (Math.abs(diff) > 30 ? 1 : 0);
-                    if (tempChange != 0) {
-                        temperature = Math.min(Math.max(temperature + tempChange, 68), 72);
-                        startY = event.clientY;
-                        updateTemperatureDisplay();
-                    }
-                }
-            });
-
-            document.addEventListener('mouseup', function () {
-                moving = false;
-            });
-
-            document.getElementById('switchSeason').textContent = 'Switch to Summer';
-            document.getElementById('switchSeason').addEventListener('click', function () {
-                isSummer = !isSummer;
-                temperature = isSummer ? 72 : 68;
-                this.textContent = isSummer ? 'Switch to Winter' : 'Switch to Summer';
-                updateTemperatureDisplay();
-            });
-
-            updateTemperatureDisplay();
-        });
         
+
         const reveals = document.querySelectorAll(".reveal");
 
         function reveal() {
